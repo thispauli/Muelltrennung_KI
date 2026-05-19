@@ -1,0 +1,18 @@
+# Ignore common OS/meta files
+.DS_Store
+Thumbs.db
+
+# Ignore image files inside the data directory (but keep data.txt)
+# Matches images in any subfolder of data/
+data/**/*.jpg
+data/**/*.jpeg
+data/**/*.png
+data/**/*.gif
+data/**/*.bmp
+
+# Optional: ignore upper-case extensions too
+data/**/*.JPG
+data/**/*.JPEG
+data/**/*.PNG
+data/**/*.GIF
+data/**/*.BMP
