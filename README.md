@@ -1,0 +1,2 @@
+# Muelltrennung_KI
+Muelltrennung_KI_Uniprojekt
