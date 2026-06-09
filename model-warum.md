@@ -1,163 +1,132 @@
-1. Begründung für das Basismodell (ResNet18)
-🔧 Grundlegende Wahl
+# Begründung für das Basismodell (ResNet18)
 
-CNN (Convolutional Neural Network)
+## Grundlegende Wahl
 
-speziell für Bilddaten entwickelt
-kann automatisch relevante Merkmale aus Bildern extrahieren
+### Convolutional Neural Network (CNN)
+- speziell für Bilddaten entwickelt  
+- extrahiert automatisch relevante visuelle Merkmale  
 
+### ResNet18
+- bewährte Standardarchitektur  
+- in vielen Anwendungen eingesetzt  
+- gute Balance zwischen Leistung und Rechenaufwand  
 
-ResNet18 = bewährte Standardarchitektur
+---
 
-in vielen realen Anwendungen verwendet
-gute Balance zwischen Leistung und Aufwand
+## Architektur-Vorteile
 
+### Residual Learning (Skip Connections)
+- reduziert das Vanishing-Gradient-Problem  
+- ermöglicht stabiles und tiefes Training  
 
+### Tiefe: 18 Layer
+- ausreichend für komplexe Muster  
+- gleichzeitig effizient und schnell trainierbar  
 
+### Feature-Hierarchie
+- frühe Layer: Kanten und Farben  
+- mittlere Layer: Formen  
+- späte Layer: Objekte und Strukturen (z. B. Flaschen, Papier)  
 
-🧠 Architektur-Vorteile
+---
 
-Residual Learning (Skip Connections)
+## Praktische Vorteile für das Projekt
 
-vermeidet Vanishing Gradient Problem
-ermöglicht stabileres Training
+- schnelle Trainingszeiten (auch ohne GPU)  
+- geringer Speicherbedarf  
+- robust gegenüber Overfitting  
 
+**Geeignet für:**
+- mittelgroße Datensätze  
+- mehrere Klassen (z. B. Müllarten)  
 
-Tiefe: 18 Layer
+---
 
-tief genug für komplexe Muster
-aber nicht zu groß → effizient
+## Transfer Learning
 
+### Vortraining auf ImageNet
+- Millionen Bilder  
+- tausende Klassen  
 
-Feature-Hierarchie
+**Gelerntes Wissen:**
+- Kanten  
+- Texturen  
+- Formen  
 
-frühe Layer: Kanten, Farben
-mittlere Layer: Formen
-späte Layer: Objekte (z. B. Flasche, Papierstruktur)
+### Vorgehen
+- Anpassung der letzten Schicht (Fine-Tuning)  
 
+### Vorteile
+- weniger Trainingsdaten erforderlich  
+- bessere Ergebnisse bei begrenzten Daten  
 
+---
 
+## Abgrenzung zu größeren Modellen
 
-⚡ Praktische Vorteile für dein Projekt
+Größere Modelle (z. B. ResNet50, EfficientNet):
+- höherer Rechenaufwand  
+- längere Trainingszeit  
+- erhöhtes Overfitting-Risiko  
 
-Schnell trainierbar
+**Einordnung:**
+- kein signifikanter Mehrwert im aktuellen Setup  
 
-wichtig ohne GPU
+**Fazit:**  
+ResNet18 bietet das beste Verhältnis aus Aufwand und Nutzen  
 
+---
 
-geringer Speicherbedarf
-robust gegen Overfitting (im Vergleich zu größeren Modellen)
-gute Wahl für:
+## Eignung für Müllklassifikation
 
-mittelgroße Datensätze (wie deiner)
-viele Klassen (6 Müllarten)
+Relevante visuelle Unterschiede:
+- Form (z. B. Flasche vs. Papier)  
+- Textur (z. B. Plastik vs. Glas)  
+- Struktur (z. B. glatt vs. zerknüllt)  
 
+→ CNN kann diese Merkmale zuverlässig erkennen  
 
+---
 
+## Einschränkungen
 
-🔁 Transfer Learning (extrem wichtig)
+- kein Verständnis von Regeln oder Kontext  
+- basiert ausschließlich auf visuellen Mustern  
+- anfällig für irrelevanten Hintergrund  
 
-Modell ist vortrainiert auf ImageNet
+---
 
-Millionen Bilder
-tausende Klassen
+## Fazit
 
+ResNet18 ist geeignet, weil es:
+- effizient und stabil trainiert  
+- gute Generalisierung liefert  
+- Transfer Learning nutzt  
+- ideal für mittelgroße Bilddatensätze ist  
 
-bedeutet:
+---
+---
 
-kennt schon:
+# Datenaugmentation
 
-Kanten
-Texturen
-Formen
+## Helligkeit
 
+**Ursachen für Variation:**
+- unterschiedliche Lichtverhältnisse (Tag/Nacht)  
+- Schatten  
+- Innen- vs. Außenaufnahmen  
 
+**Effekt:**
+- höhere Robustheit gegenüber Beleuchtung  
 
+---
 
-du machst nur:
+## Noise
 
-Fine-Tuning der letzten Schicht
+**Simuliert:**
+- geringe Kameraqualität  
+- Kompressionsartefakte  
+- Unschärfe  
 
-
-
-👉 Vorteil:
-
-viel weniger Trainingsdaten nötig
-bessere Ergebnisse bei wenig Daten
-
-
-📊 Warum nicht größere Modelle?
-(z. B. ResNet50, EfficientNet)
-
-brauchen:
-
-mehr Rechenleistung
-längere Trainingszeit
-
-
-höheres Risiko von:
-
-Overfitting
-
-
-kaum Vorteil bei deinem Setup
-
-👉 ResNet18 = beste Kosten-Nutzen-Wahl
-
-🔍 Warum geeignet für Müllklassifikation?
-
-Müll unterscheidet sich stark über:
-
-Form (Flasche vs Papier)
-Textur (Plastik vs Glas)
-Struktur (zerknüllt vs glatt)
-
-
-
-👉 CNN erkennt genau diese Eigenschaften sehr gut
-
-⚠️ Einschränkungen (ehrlich)
-
-Modell „versteht“ keine Regeln
-
-z. B. verschmutztes Papier → Problem
-
-
-basiert nur auf:
-
-visuellen Mustern
-
-
-anfällig für:
-
-irrelevanten Hintergrund
-
-
-
-
-✅ Fazit (kompakt)
-ResNet18 ist gewählt, weil es:
-
-effizient und stabil trainiert
-gute Generalisierung liefert
-Transfer Learning nutzt
-optimal für mittelgroße Bilddatensätze ist
-
-
-✅ Helligkeit
-Müllbilder haben oft:
-
-unterschiedliche Tageszeiten
-Schatten
-Indoor / Outdoor
-
-→ Modell wird robuster gegen Licht
-
-✅ Noise
-Simuliert:
-
-schlechte Kameras
-JPEG-Artefakte
-unscharfe Bilder
-
-→ Modell wird stabiler
+**Effekt:**
+- stabilere Vorhersagen bei variierender Bildqualität  

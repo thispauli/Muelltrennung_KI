@@ -177,6 +177,7 @@ for epoch in range(EPOCHS):
         f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f} | "
         f"Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.4f}"
     )
+    print(f"Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     # bestes Modell speichern
     if val_acc > best_val_acc:
