@@ -142,3 +142,22 @@ effizient und stabil trainiert
 gute Generalisierung liefert
 Transfer Learning nutzt
 optimal für mittelgroße Bilddatensätze ist
+
+
+✅ Helligkeit
+Müllbilder haben oft:
+
+unterschiedliche Tageszeiten
+Schatten
+Indoor / Outdoor
+
+→ Modell wird robuster gegen Licht
+
+✅ Noise
+Simuliert:
+
+schlechte Kameras
+JPEG-Artefakte
+unscharfe Bilder
+
+→ Modell wird stabiler

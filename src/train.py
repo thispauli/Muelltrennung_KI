@@ -7,6 +7,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import datasets, transforms, models
 from torchvision.models import ResNet18_Weights
+from datetime import datetime
 
 # =========================
 # Pfade
@@ -35,7 +36,8 @@ torch.manual_seed(RANDOM_SEED)
 # =========================
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Device: {device}")
-
+print(f"Start: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+start = datetime.now()
 # =========================
 # Transformationen
 # =========================
@@ -196,3 +198,6 @@ print(f"Bestes Modell: {best_model_path}")
 print(f"Letztes Modell: {last_model_path}")
 print(f"Klassennamen: {classes_path}")
 print(f"Beste Validierungs-Accuracy: {best_val_acc:.4f}")
+print(f"End: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+end = datetime.now()
+print("Dauer:", end - start)
