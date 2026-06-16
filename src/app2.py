@@ -2,6 +2,8 @@ import os
 import json
 import numpy as np
 from PIL import Image
+import time
+import shutil
 
 import torch
 import torch.nn as nn
@@ -12,17 +14,24 @@ import matplotlib.cm as cm
 import gradio as gr
 
 # =========================
-# Pfade
+# Pfade & Konfiguration
 # =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))          # src/
 PROJECT_ROOT = os.path.abspath(os.path.join(BASE_DIR, ".."))   # Projektwurzel
 MODELS_DIR = os.path.join(PROJECT_ROOT, "models")
 OUTPUT_DIR = os.path.join(PROJECT_ROOT, "outputs")
 
+# Pfad zum dedizierten Training-Ordner für Korrekturen
+TRAINING_DIR = os.path.join(PROJECT_ROOT, "Training")                  
+
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(TRAINING_DIR, exist_ok=True)
 
 MODEL_PATH = os.path.join(MODELS_DIR, "best_model.pth")
 CLASSES_PATH = os.path.join(MODELS_DIR, "classes.json")
+
+# Einfaches Passwort für den Admin-Bereich
+ADMIN_PASSWORD = "admin"
 
 # =========================
 # Parameter
@@ -75,7 +84,7 @@ target_layer.register_forward_hook(forward_hook)
 target_layer.register_full_backward_hook(backward_hook)
 
 # =========================
-# Hilfsfunktionen
+# Hilfsfunktionen für Inference
 # =========================
 def preprocess_image(image_path):
     image = Image.open(image_path).convert("RGB")
@@ -153,7 +162,7 @@ def save_visualization(original, heatmap, overlay, image_path, pred_class, confi
 # =========================
 def run_inference_ui(image_path):
     if image_path is None:
-        return None, "<p>Bitte lade ein Bild hoch.</p>"
+        return None, "<p>Bitte lade ein Bild hoch.</p>", None, None
 
     try:
         pil_image, image_tensor, _ = preprocess_image(image_path)
@@ -196,41 +205,210 @@ def run_inference_ui(image_path):
         </div>
         """
         
-        return save_path, result_html
+        return save_path, result_html, image_path, pred_class
         
     except Exception as e:
-        return None, f"<p style='color:red;'>Fehler bei der Bildverarbeitung: {str(e)}</p>"
+        return None, f"<p style='color:red;'>Fehler bei der Bildverarbeitung: {str(e)}</p>", None, None
+
 
 # =========================
-# Gradio UI Start (Mit Accordion)
+# Admin & Feedback Funktionen
+# =========================
+def verify_admin(password):
+    if password == ADMIN_PASSWORD:
+        return gr.update(visible=False), gr.update(visible=True), ""
+    else:
+        return gr.update(visible=True), gr.update(visible=False), "<div style='color:#ef4444; text-align:center; font-weight:600; margin-top:10px;'>❌ Falsches Passwort! Bitte versuchen Sie es erneut.</div>"
+
+def save_feedback(image_path, selected_class, current_prediction):
+    if not image_path:
+        return """
+        <div style='padding: 12px; color: #ef4444; font-family: sans-serif; font-size: 14px;'>
+            ⚠️ <strong>Kein Bild vorhanden:</strong> Bitte analysieren Sie zuerst ein Bild in der Nutzer-Ansicht.
+        </div>
+        """
+    if not selected_class:
+        return """
+        <div style='padding: 12px; color: #f59e0b; font-family: sans-serif; font-size: 14px;'>
+            💡 <strong>Hinweis:</strong> Bitte wählen Sie eine Kategorie aus dem Dropdown-Menü.
+        </div>
+        """
+
+    try:
+        target_folder = os.path.join(TRAINING_DIR, selected_class)
+        os.makedirs(target_folder, exist_ok=True)
+        
+        timestamp = int(time.time())
+        filename = f"feedback_{timestamp}.jpg"
+        target_path = os.path.join(target_folder, filename)
+        
+        shutil.copy(image_path, target_path)
+        
+        status_msg = "BESTÄTIGT" if selected_class == current_prediction else "KORRIGIERT"
+        
+        if status_msg == "BESTÄTIGT":
+            badge_text = f"Bestätigt: {selected_class}"
+            badge_bg = "rgba(16, 185, 129, 0.15)"
+            badge_color = "#10b981"
+            badge_border = "1px solid rgba(16, 185, 129, 0.3)"
+        else:
+            badge_text = f"Korrigiert: {current_prediction} ➔ {selected_class}"
+            badge_bg = "rgba(245, 158, 11, 0.15)"
+            badge_color = "#f59e0b"
+            badge_border = "1px solid rgba(245, 158, 11, 0.3)"
+        
+        return f"""
+        <div style='margin-top: 25px; padding: 20px; border-radius: 10px; border: 1px solid rgba(128, 128, 128, 0.15); background-color: rgba(128, 128, 128, 0.02); font-family: sans-serif;'>
+            <div style='display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;'>
+                <span style='color: #10b981; font-size: 18px; font-weight: bold;'>✓</span>
+                <span style='font-weight: 600; color: inherit; font-size: 15px;'>Klassifizierung weggesichert!</span>
+                <span style='background-color: {badge_bg}; color: {badge_color}; border: {badge_border}; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;'>{badge_text}</span>
+            </div>
+            <div style='color: inherit; opacity: 0.6; font-size: 14px;'>
+                Speicherpfad: <code style='background-color: rgba(128, 128, 128, 0.08); color: inherit; padding: 3px 8px; border-radius: 5px; font-family: monospace; font-size: 13px;'>Training/{selected_class}/</code>
+            </div>
+        </div>
+        """
+    except Exception as e:
+        return f"<p style='color:#ef4444;'>Fehler beim Speichern: {str(e)}</p>"
+
+
+# =========================
+# Gradio UI Start
 # =========================
 if __name__ == "__main__":
-    with gr.Blocks(title="Müll-Klassifizierung", theme=gr.themes.Soft()) as demo:
-        gr.Markdown("<h1 style='text-align: center; margin-bottom: 10px;'>♻️ Müll-Klassifizierung mit KI</h1>")
-        gr.Markdown("<p style='text-align: center; font-size: 16px; color: #666;'>Lade ein Bild von Abfall hoch. Das KI-Modell analysiert den Müll und ordnet ihn einer Kategorie zu.</p>")
+    
+    force_light_js = """
+    function() {
+        document.body.classList.remove('dark');
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+    }
+    """
+    
+    with gr.Blocks(
+        title="Müll-Klassifizierung", 
+        theme=gr.themes.Soft(), 
+        css="footer {display: none !important;}",
+        js=force_light_js
+    ) as demo:
         
-        # Obere Reihe: Upload (Links) & Großes Ergebnis (Rechts)
-        with gr.Row(variant="panel"):
-            with gr.Column(scale=1):
-                input_image = gr.Image(type="filepath", label="Bild hochladen", height=320)
-                analyze_btn = gr.Button("🔍 Müll analysieren", variant="primary", size="lg")
+        current_image_state = gr.State(None)
+        current_pred_state = gr.State(None)
+        
+        gr.Markdown("<h1 style='text-align: center; margin-bottom: 10px;'>♻️ Müll-Klassifizierung mit KI</h1>")
+        
+        with gr.Tabs():
+            
+            # ---------------------------------------------------------
+            # TAB 1: NUTZER ANSICHT
+            # ---------------------------------------------------------
+            with gr.TabItem("👤 Nutzer Ansicht"):
+                gr.Markdown("<p style='text-align: center; font-size: 16px; color: #666;'>Lade ein Bild von Abfall hoch. Das KI-Modell analysiert den Müll und ordnet ihn einer Kategorie zu.</p>")
                 
-            with gr.Column(scale=2):
-                output_html = gr.HTML(label="KI-Ergebnis")
+                with gr.Row(variant="panel"):
+                    with gr.Column(scale=1):
+                        input_image = gr.Image(type="filepath", label="Bild hochladen", height=320)
+                        analyze_btn = gr.Button("🔍 Müll analysieren", variant="primary", size="lg")
+                        
+                    with gr.Column(scale=2):
+                        output_html = gr.HTML(label="KI-Ergebnis")
 
-        # --- NEU: Einklappbarer Bereich für die Heatmap ---
-        # open=False sorgt dafür, dass es beim Start eingeklappt ist.
-        with gr.Accordion("📊 Detailanalyse (Heatmap) einblenden", open=False):
-            gr.Markdown("Hier kannst du sehen, **welche Bildbereiche** für die Entscheidung der KI ausschlaggebend waren (rot = sehr wichtig).")
-            # show_label=False macht es noch etwas cleaner, da die Überschrift schon im Accordion steht
-            output_image = gr.Image(type="filepath", show_label=False, height=450, interactive=False)
+                with gr.Accordion("📊 Detailanalyse (Heatmap) einblenden", open=False):
+                    gr.Markdown("Hier kannst du sehen, **welche Bildbereiche** für die Entscheidung der KI ausschlaggebend waren (rot = sehr wichtig).")
+                    output_image = gr.Image(type="filepath", show_label=False, height=450, interactive=False)
 
-        # Aktion beim Klick auf den Button
-        analyze_btn.click(
-            fn=run_inference_ui,
-            inputs=input_image,
-            outputs=[output_image, output_html]
-        )
+                analyze_btn.click(
+                    fn=run_inference_ui,
+                    inputs=input_image,
+                    outputs=[output_image, output_html, current_image_state, current_pred_state]
+                )
+            
+            # ---------------------------------------------------------
+            # TAB 2: ADMIN ANSICHT (Vollständig Transparent & Planar)
+            # ---------------------------------------------------------
+            with gr.TabItem("🛠️ Admin Ansicht (Training)"):
+                
+                # --- Login Bereich (Jetzt ohne gr.Group und Panel) ---
+                with gr.Column(visible=True) as login_group:
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            pass
+                        with gr.Column(scale=2):
+                            gr.HTML("""
+                            <div style="text-align: center; padding: 40px 0 20px 0;">
+                                <div style="font-size: 50px; margin-bottom: 15px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.08));">🔒</div>
+                                <h2 style="margin: 0; font-size: 24px; color: inherit; font-weight: 700; letter-spacing: -0.5px;">Admin-Authentifizierung</h2>
+                                <p style="color: inherit; opacity: 0.5; margin-top: 6px; font-size: 14px;">Bitte Passwort eingeben, um Zugriff auf die Daten-Kuration zu erhalten.</p>
+                            </div>
+                            """)
+                            pwd_input = gr.Textbox(label="Passwort", type="password", placeholder="Hier Admin-Passwort eingeben...", container=True)
+                            login_btn = gr.Button("Anmelden ➔", variant="primary", size="lg")
+                            login_error = gr.HTML()
+                        with gr.Column(scale=1):
+                            pass
+                
+                # --- Admin Dashboard (Transparent ohne gr.Group-Kartenlayout) ---
+                with gr.Column(visible=False) as admin_group:
+                    gr.HTML("""
+                    <div style="border-bottom: 1px solid rgba(128, 128, 128, 0.2); padding-bottom: 16px; margin-bottom: 25px; text-align: left; margin-top: 10px;">
+                        <h2 style="margin: 0; font-size: 26px; color: inherit; font-weight: 800; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px;">🎓 Modell-Feedback & Daten-Kuration</h2>
+                        <p style="color: inherit; opacity: 0.5; margin-top: 6px; font-size: 15px;">Validieren oder korrigieren Sie hier die Ergebnisse der Nutzerseite, um den Datensatz für zukünftige Trainingszyklen zu optimieren.</p>
+                    </div>
+                    """)
+                    
+                    with gr.Row():
+                        # Linke Spalte: Live-Kontext des Nutzers (Vorschau)
+                        with gr.Column(scale=1):
+                            gr.HTML("<div style='font-weight: 700; color: inherit; opacity: 0.6; font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;'>🔎 Zuletzt analysierter Kontext</div>")
+                            admin_image_preview = gr.Image(label="Aktuelles Nutzer-Bild", type="filepath", interactive=False, height=240)
+                            admin_pred_display = gr.Textbox(label="Von der KI getroffene Vorhersage", interactive=False)
 
-    # Starte die App lokal
+                        # Rechte Spalte: Validierung und Feedback-Aktion
+                        with gr.Column(scale=1):
+                            gr.HTML("<div style='font-weight: 700; color: inherit; opacity: 0.6; font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;'>🛠️ Daten-Klassifizierung</div>")
+                            
+                            correct_class_dropdown = gr.Dropdown(
+                                choices=class_names, 
+                                label="Tatsächliche, korrekte Kategorie", 
+                                info="Stimmt die Erkennung? Dann einfach bestätigen. Ist sie falsch, wählen Sie die richtige Zielklasse aus."
+                            )
+                            
+                            save_feedback_btn = gr.Button("💾 Feedback einreichen & Bild wegsichern", variant="primary", size="lg")
+                            feedback_status_html = gr.HTML()
+                    
+                    # Logik zur Live-Aktualisierung der Admin-Ansicht
+                    def update_admin_view(pred):
+                        if pred:
+                            return pred, pred
+                        return "Noch kein Bild analysiert", None
+                    
+                    # Verbinde States mit den Admin-Komponenten
+                    current_pred_state.change(
+                        fn=update_admin_view,
+                        inputs=current_pred_state,
+                        outputs=[admin_pred_display, correct_class_dropdown]
+                    )
+                    
+                    # Automatisches Mitführen des Bildes in die Admin-Vorschau
+                    current_image_state.change(
+                        fn=lambda img: img if img else None,
+                        inputs=current_image_state,
+                        outputs=admin_image_preview
+                    )
+
+                # Login Trigger
+                login_btn.click(
+                    fn=verify_admin,
+                    inputs=pwd_input,
+                    outputs=[login_group, admin_group, login_error]
+                )
+                
+                # Feedback Trigger
+                save_feedback_btn.click(
+                    fn=save_feedback,
+                    inputs=[current_image_state, correct_class_dropdown, current_pred_state],
+                    outputs=feedback_status_html
+                )
+
     demo.launch(inbrowser=True)
