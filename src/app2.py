@@ -158,7 +158,7 @@ def save_visualization(original, heatmap, overlay, image_path, pred_class, confi
     return save_path
 
 # =========================
-# Interface Hauptfunktion
+# Admin & Feedback Funktionen
 # =========================
 def run_inference_ui(image_path):
     if image_path is None:
@@ -210,15 +210,38 @@ def run_inference_ui(image_path):
     except Exception as e:
         return None, f"<p style='color:red;'>Fehler bei der Bildverarbeitung: {str(e)}</p>", None, None
 
-
-# =========================
-# Admin & Feedback Funktionen
-# =========================
-def verify_admin(password):
+def verify_admin(password, current_img, current_pred):
     if password == ADMIN_PASSWORD:
-        return gr.update(visible=False), gr.update(visible=True), ""
+        pred_val = current_pred if current_pred else "Noch kein Bild analysiert"
+        dropdown_val = current_pred if current_pred else None
+        
+        return (
+            gr.update(visible=False),              # login_group
+            gr.update(visible=True),               # admin_group
+            gr.update(value=""),                   # login_error
+            gr.update(value=current_img),          # admin_image_preview
+            gr.update(value=pred_val),             # admin_pred_display
+            gr.update(value=dropdown_val)          # correct_class_dropdown
+        )
     else:
-        return gr.update(visible=True), gr.update(visible=False), "<div style='color:#ef4444; text-align:center; font-weight:600; margin-top:10px;'>❌ Falsches Passwort! Bitte versuchen Sie es erneut.</div>"
+        return (
+            gr.update(visible=True), 
+            gr.update(visible=False), 
+            gr.update(value="<div style='color:#ef4444; text-align:center; font-weight:600; margin-top:10px;'>❌ Falsches Passwort! Bitte versuchen Sie es erneut.</div>"),
+            gr.update(value=None),                      
+            gr.update(value=""),
+            gr.update(value=None)
+        )
+
+def auto_reset_admin():
+    """Sorgt beim Anklicken des Admin-Tabs dafür, dass man standardmäßig das Login sieht."""
+    return (
+        gr.update(visible=True),   # login_group einblenden
+        gr.update(visible=False),  # admin_group ausblenden
+        gr.update(value=""),       # Passwortfeld leeren
+        gr.update(value=""),       # Fehler-HTML leeren
+        gr.update(value="")        # Status-HTML leeren
+    )
 
 def save_feedback(image_path, selected_class, current_prediction):
     if not image_path:
@@ -274,22 +297,26 @@ def save_feedback(image_path, selected_class, current_prediction):
 
 
 # =========================
-# Gradio UI Start
+# Gradio UI Layout
 # =========================
 if __name__ == "__main__":
     
+    # Direkt ausführbares JS ohne unaufgerufene Funktionsklammern
     force_light_js = """
-    function() {
-        document.body.classList.remove('dark');
-        document.documentElement.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-    }
+    document.body.classList.remove('dark');
+    document.documentElement.classList.remove('dark');
+    localStorage.setItem('theme', 'light');
+    """
+    
+    custom_css = """
+    footer {display: none !important;}
+    .fixed-height-img img { max-height: 380px !important; object-fit: contain !important; }
     """
     
     with gr.Blocks(
         title="Müll-Klassifizierung", 
         theme=gr.themes.Soft(), 
-        css="footer {display: none !important;}",
+        css=custom_css,
         js=force_light_js
     ) as demo:
         
@@ -303,20 +330,20 @@ if __name__ == "__main__":
             # ---------------------------------------------------------
             # TAB 1: NUTZER ANSICHT
             # ---------------------------------------------------------
-            with gr.TabItem("👤 Nutzer Ansicht"):
+            with gr.TabItem("👤 Nutzer Ansicht") as user_tab:
                 gr.Markdown("<p style='text-align: center; font-size: 16px; color: #666;'>Lade ein Bild von Abfall hoch. Das KI-Modell analysiert den Müll und ordnet ihn einer Kategorie zu.</p>")
                 
-                with gr.Row(variant="panel"):
-                    with gr.Column(scale=1):
-                        input_image = gr.Image(type="filepath", label="Bild hochladen", height=320)
+                with gr.Row():
+                    with gr.Column():
+                        input_image = gr.Image(type="filepath", label="Bild hochladen", elem_classes=["fixed-height-img"])
                         analyze_btn = gr.Button("🔍 Müll analysieren", variant="primary", size="lg")
                         
-                    with gr.Column(scale=2):
+                    with gr.Column():
                         output_html = gr.HTML(label="KI-Ergebnis")
 
                 with gr.Accordion("📊 Detailanalyse (Heatmap) einblenden", open=False):
                     gr.Markdown("Hier kannst du sehen, **welche Bildbereiche** für die Entscheidung der KI ausschlaggebend waren (rot = sehr wichtig).")
-                    output_image = gr.Image(type="filepath", show_label=False, height=450, interactive=False)
+                    output_image = gr.Image(type="filepath", show_label=False, interactive=False, elem_classes=["fixed-height-img"])
 
                 analyze_btn.click(
                     fn=run_inference_ui,
@@ -325,11 +352,11 @@ if __name__ == "__main__":
                 )
             
             # ---------------------------------------------------------
-            # TAB 2: ADMIN ANSICHT (Vollständig Transparent & Planar)
+            # TAB 2: ADMIN ANSICHT
             # ---------------------------------------------------------
-            with gr.TabItem("🛠️ Admin Ansicht (Training)"):
+            with gr.TabItem("🛠️ Admin Ansicht (Training)") as admin_tab:
                 
-                # --- Login Bereich (Jetzt ohne gr.Group und Panel) ---
+                # --- Login Bereich ---
                 with gr.Column(visible=True) as login_group:
                     with gr.Row():
                         with gr.Column(scale=1):
@@ -348,23 +375,22 @@ if __name__ == "__main__":
                         with gr.Column(scale=1):
                             pass
                 
-                # --- Admin Dashboard (Transparent ohne gr.Group-Kartenlayout) ---
+                # --- Admin Dashboard ---
                 with gr.Column(visible=False) as admin_group:
-                    gr.HTML("""
-                    <div style="border-bottom: 1px solid rgba(128, 128, 128, 0.2); padding-bottom: 16px; margin-bottom: 25px; text-align: left; margin-top: 10px;">
-                        <h2 style="margin: 0; font-size: 26px; color: inherit; font-weight: 800; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px;">🎓 Modell-Feedback & Daten-Kuration</h2>
-                        <p style="color: inherit; opacity: 0.5; margin-top: 6px; font-size: 15px;">Validieren oder korrigieren Sie hier die Ergebnisse der Nutzerseite, um den Datensatz für zukünftige Trainingszyklen zu optimieren.</p>
-                    </div>
-                    """)
+                    with gr.Row():
+                        gr.HTML("""
+                        <div style="border-bottom: 1px solid rgba(128, 128, 128, 0.2); padding-bottom: 16px; margin-bottom: 25px; text-align: left; margin-top: 10px; width: 100%;">
+                            <h2 style="margin: 0; font-size: 26px; color: inherit; font-weight: 800; display: flex; align-items: center; gap: 10px; letter-spacing: -0.5px;">🎓 Modell-Feedback & Daten-Kuration</h2>
+                            <p style="color: inherit; opacity: 0.5; margin-top: 6px; font-size: 15px;">Validieren oder korrigieren Sie hier die Ergebnisse der Nutzerseite, um den Datensatz für zukünftige Trainingszyklen zu optimieren.</p>
+                        </div>
+                        """)
                     
                     with gr.Row():
-                        # Linke Spalte: Live-Kontext des Nutzers (Vorschau)
                         with gr.Column(scale=1):
                             gr.HTML("<div style='font-weight: 700; color: inherit; opacity: 0.6; font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;'>🔎 Zuletzt analysierter Kontext</div>")
-                            admin_image_preview = gr.Image(label="Aktuelles Nutzer-Bild", type="filepath", interactive=False, height=240)
+                            admin_image_preview = gr.Image(label="Vorschau", interactive=False, type="filepath", height=240)
                             admin_pred_display = gr.Textbox(label="Von der KI getroffene Vorhersage", interactive=False)
 
-                        # Rechte Spalte: Validierung und Feedback-Aktion
                         with gr.Column(scale=1):
                             gr.HTML("<div style='font-weight: 700; color: inherit; opacity: 0.6; font-size: 13px; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px;'>🛠️ Daten-Klassifizierung</div>")
                             
@@ -376,39 +402,36 @@ if __name__ == "__main__":
                             
                             save_feedback_btn = gr.Button("💾 Feedback einreichen & Bild wegsichern", variant="primary", size="lg")
                             feedback_status_html = gr.HTML()
-                    
-                    # Logik zur Live-Aktualisierung der Admin-Ansicht
-                    def update_admin_view(pred):
-                        if pred:
-                            return pred, pred
-                        return "Noch kein Bild analysiert", None
-                    
-                    # Verbinde States mit den Admin-Komponenten
-                    current_pred_state.change(
-                        fn=update_admin_view,
-                        inputs=current_pred_state,
-                        outputs=[admin_pred_display, correct_class_dropdown]
-                    )
-                    
-                    # Automatisches Mitführen des Bildes in die Admin-Vorschau
-                    current_image_state.change(
-                        fn=lambda img: img if img else None,
-                        inputs=current_image_state,
-                        outputs=admin_image_preview
-                    )
 
-                # Login Trigger
-                login_btn.click(
-                    fn=verify_admin,
-                    inputs=pwd_input,
-                    outputs=[login_group, admin_group, login_error]
-                )
-                
-                # Feedback Trigger
-                save_feedback_btn.click(
-                    fn=save_feedback,
-                    inputs=[current_image_state, correct_class_dropdown, current_pred_state],
-                    outputs=feedback_status_html
-                )
+        # =========================================================================
+        # EVENT LISTENER
+        # =========================================================================
+        
+        admin_tab.select(
+            fn=auto_reset_admin,
+            inputs=None,
+            outputs=[login_group, admin_group, pwd_input, login_error, feedback_status_html]
+        )
+        
+        # Login via Button-Klick
+        login_btn.click(
+            fn=verify_admin,
+            inputs=[pwd_input, current_image_state, current_pred_state],
+            outputs=[login_group, admin_group, login_error, admin_image_preview, admin_pred_display, correct_class_dropdown]
+        )
+        
+        # Login via ENTER-Taste im Passwortfeld
+        pwd_input.submit(
+            fn=verify_admin,
+            inputs=[pwd_input, current_image_state, current_pred_state],
+            outputs=[login_group, admin_group, login_error, admin_image_preview, admin_pred_display, correct_class_dropdown]
+        )
+        
+        # Feedback-Speicherung absichern
+        save_feedback_btn.click(
+            fn=save_feedback,
+            inputs=[current_image_state, correct_class_dropdown, current_pred_state],
+            outputs=feedback_status_html
+        )
 
-    demo.launch(inbrowser=True)
+    demo.launch(inbrowser=True, allowed_paths=[PROJECT_ROOT])
