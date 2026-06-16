@@ -2,6 +2,8 @@
 .DS_Store
 Thumbs.db
 
+outputs/*
+
 # Ignore image files inside the data directory (but keep data.txt)
 # Matches images in any subfolder of data/
 data/**/*.jpg
