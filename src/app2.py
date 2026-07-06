@@ -284,7 +284,7 @@ def save_feedback(image_path, selected_class, current_prediction):
         <div style='margin-top: 25px; padding: 20px; border-radius: 10px; border: 1px solid rgba(128, 128, 128, 0.15); background-color: rgba(128, 128, 128, 0.02); font-family: sans-serif;'>
             <div style='display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px;'>
                 <span style='color: #10b981; font-size: 18px; font-weight: bold;'>✓</span>
-                <span style='font-weight: 600; color: inherit; font-size: 15px;'>Klassifizierung weggesichert!</span>
+                <span style='font-weight: 600; color: inherit; font-size: 15px;'>Klassifizierung gesichert!</span>
                 <span style='background-color: {badge_bg}; color: {badge_color}; border: {badge_border}; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px;'>{badge_text}</span>
             </div>
             <div style='color: inherit; opacity: 0.6; font-size: 14px;'>
@@ -400,7 +400,7 @@ if __name__ == "__main__":
                                 info="Stimmt die Erkennung? Dann einfach bestätigen. Ist sie falsch, wählen Sie die richtige Zielklasse aus."
                             )
                             
-                            save_feedback_btn = gr.Button("💾 Feedback einreichen & Bild wegsichern", variant="primary", size="lg")
+                            save_feedback_btn = gr.Button("💾 Feedback einreichen & Bild sichern", variant="primary", size="lg")
                             feedback_status_html = gr.HTML()
 
         # =========================================================================
