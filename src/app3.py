@@ -213,7 +213,7 @@ def run_inference_ui(image_path):
         
         # Emoji-Mapping für hübschere Darstellung
         icon_map = {
-            "Rest": "🗑️", "Plastik": "🟡", "Papier": "📦", "Bio": "🍎", "Glas": "🍾"      
+            "Rest": "🗑️", "Plastik": "🛍️", "Papier": "📦", "Bio": "🍎", "Glas": "🍾"      
         }
         icon = icon_map.get(pred_class, "♻️")
         
