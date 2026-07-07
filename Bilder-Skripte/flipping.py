@@ -1,3 +1,5 @@
+# erste Auswahl horizontal flippen
+
 import os
 from PIL import Image
 

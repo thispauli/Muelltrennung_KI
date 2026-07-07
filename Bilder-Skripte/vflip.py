@@ -1,3 +1,5 @@
+# Original und erster flip vertikal flippen, gesamt zu Set 1
+
 import os
 from PIL import Image
 

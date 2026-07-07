@@ -1,3 +1,5 @@
+# Bilder, die nicht ausgewählt wurden, in getrennte Ordner packen zum manuellen nutzen
+
 import os
 import random
 import shutil
