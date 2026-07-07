@@ -61,8 +61,9 @@ Aus den Originaldatensätzen wurde ein eigener Trainingsdatensatz erstellt. Die 
 │   ├── vflip.py           # Vertikaler Flip
 │   ├── rotate.py          # Rotation um 45°
 │   └── brightNoise.py     # Helligkeit + Noise Variation
-├── data/                  # Trainingsdaten (klassenbasiert)
-├── test_data/             # Testdaten für Evaluation
+├── data/                  # Trainingsdaten (klassenbasiert) / braucht Klassen-Unterordner
+├── test_data/             # Testdaten für Evaluation / braucht Klassen-Unterordner
+├── Training/              # Erweiterte Trainingsdaten / erstellt Klassen-Unterordner
 ├── models/                # Gespeicherte Modellgewichte
 │   ├── best_model.pth     # Bestes Modell (9k Bilder)
 │   ├── best_model_20x.pth # Bestes Modell (180k Bilder, 20x augmentiert)
@@ -108,7 +109,7 @@ Aus den Originaldatensätzen wurde ein eigener Trainingsdatensatz erstellt. Die 
 ### Voraussetzungen
 
 - Python 3.x
-- PyTorch, torchvision, gradio, Pillow, matplotlib, numpy
+- PyTorch, torchvision, **gradio** (pip install gradio) für UI, Pillow, matplotlib, numpy
 
 ### Training
 
