@@ -82,6 +82,23 @@ Das letzte Modell des Trainingslaufs mit ~9.000 Bildern (nicht unbedingt das bes
 
 ---
 
+## model.pth
+
+**Beschreibung:**
+Altbestand – älteres Modell aus einem früheren Trainingslauf, vor der Einführung der aktuellen Datensätze (9k / 180k Bilder).
+
+**Trainingsgrundlage:**
+
+- Unbekannte/ältere Trainingsdaten (vor der eigenen Datenaugmentierung)
+- Nicht mehr aktiv verwendet
+
+**Verwendung:**
+
+- Aktuell keine – wird von keinem Skript referenziert
+- Kann bei Bedarf gelöscht werden
+
+---
+
 ## classes.json
 
 **Inhalt:**
@@ -97,33 +114,12 @@ Das letzte Modell des Trainingslaufs mit ~9.000 Bildern (nicht unbedingt das bes
 
 ---
 
-## best_model_20x
-
-**Beschreibung:**
-Bestes Modell aus dem Training mit dem erweiterten Datensatz.
-
-**Trainingsgrundlage:**
-
-- Eigener Datensatz mit ca. 180.000 Trainingsbildern
-- Entstanden durch Datensatzerweiterung gegenüber dem ursprünglichen Datensatz mit ca. 9.000 Bildern
-
-**Verwendung:**
-
-- Vergleich der Modellleistung zwischen kleinem und großem Datensatz
-- Analyse des Einflusses umfangreicher Trainingsdaten auf die Klassifikationsgenauigkeit
-
-**Aktualisierung:**
-
-- Enthält das beste Modell aus den Trainingsläufen auf Basis der 180.000 Bilder
-- Wird nur ersetzt, wenn innerhalb dieser Trainingsreihe ein Modell mit besserer Validation Accuracy erzielt wird
-- Manuell
-
----
-
 ## Zusammenfassung
 
-| Modell | Trainingsbasis | Zweck |
-|----------|---------------|--------|
-| best_model | Bestes Training insgesamt | Global bestes Modell nach Validation Accuracy |
-| last_model | Ca. 9.000 eigene Trainingsbilder | Abgleich Iterationen |
-| best_model_20x | Ca. 180.000 eigene Trainingsbilder | Bestes Modell des erweiterten Datensatzes |
+| Datei | Trainingsgrundlage | Status |
+|-------|-------------------|--------|
+| `best_model.pth` | ~180.000 Bilder (20x augmentiert) | ✅ Aktiv – Standardmodell in der UI |
+| `best_model_20x.pth` | ~180.000 Bilder (20x augmentiert) | ⚠️ Statisch – Vergleich/Zwischenspeicherung |
+| `last_model.pth` | ~9.000 Bilder | ⚠️ Statisch – letzter Stand des 9k-Trainings |
+| `model.pth` | Ältere Trainingsdaten (vor Datenaugmentierung) | ❌ Altbestand – nicht mehr verwendet |
+| `classes.json` | Klassenmapping | ✅ Aktiv |
