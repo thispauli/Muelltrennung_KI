@@ -100,7 +100,7 @@ target_layer.register_full_backward_hook(backward_hook)
 # Hilfsfunktionen für Inference & Erklärbarkeit
 # =====================================================================
 def preprocess_image(image_path):
-    """Lädt das Bild, wandelt es in RGB um und wendet die Transformationen an."""
+    # Lädt das Bild, wandelt es in RGB um und wendet die Transformationen an.
     image = Image.open(image_path).convert("RGB")
     orig_size = image.size  # (width, height) speichern für spätere Visualisierungen
     # Füge eine Batch-Dimension hinzu (aus [C, H, W] wird [1, C, H, W]) und verschiebe auf CPU/GPU
@@ -108,7 +108,7 @@ def preprocess_image(image_path):
     return image, tensor, orig_size
 
 def predict(image_tensor):
-    """Führt die Vorhersage durch. enable_grad() ist hier wichtig für das spätere Grad-CAM!"""
+    # Führt die Vorhersage durch. enable_grad() ist hier wichtig für das spätere Grad-CAM!
     with torch.enable_grad(): # Gradientenberechnung aktivieren, da wir sie für Grad-CAM brauchen
         output = model(image_tensor)
         probs = torch.softmax(output, dim=1) # Wandle rohe Modell-Outputs in Wahrscheinlichkeiten um
@@ -117,7 +117,7 @@ def predict(image_tensor):
     return output, pred_idx, confidence
 
 def generate_gradcam(output, pred_idx):
-    """Erzeugt die Grad-CAM Heatmap, die zeigt, worauf das Modell geachtet hat."""
+    # Erzeugt die Grad-CAM Heatmap, die zeigt, worauf das Modell geachtet hat.
     model.zero_grad() # Setze alte Gradienten zurück
     score = output[:, pred_idx] # Nimm den Vorhersage-Wert der ermittelten Klasse
     # Backpropagation: Berechne die Gradienten des Scores in Bezug auf die Feature Maps
@@ -144,7 +144,7 @@ def generate_gradcam(output, pred_idx):
     return cam_map
 
 def overlay_heatmap_on_image(pil_image, cam_map, alpha=0.4):
-    """Legt die generierte Heatmap transparent über das Originalbild."""
+    # Legt die generierte Heatmap transparent über das Originalbild.
     # Skaliere die kleine Heatmap auf die Originalbildgröße hoch
     cam_img = Image.fromarray(np.uint8(cam_map * 255)).resize(pil_image.size, Image.Resampling.BILINEAR)
     cam_array = np.array(cam_img) / 255.0
@@ -161,7 +161,7 @@ def overlay_heatmap_on_image(pil_image, cam_map, alpha=0.4):
     return original, heatmap_pil, blended
 
 def save_visualization(original, heatmap, overlay, image_path, pred_class, confidence):
-    """Speichert eine kombinierte Ansicht aus Original, Heatmap und Overlay als Bilddatei."""
+    # Speichert eine kombinierte Ansicht aus Original, Heatmap und Overlay als Bilddatei.
     file_name = os.path.splitext(os.path.basename(image_path))[0]
     save_path = os.path.join(OUTPUT_DIR, f"{file_name}_gradcam.png")
 
@@ -189,7 +189,7 @@ def save_visualization(original, heatmap, overlay, image_path, pred_class, confi
 # Gradio Callback-Funktionen (UI-Logik)
 # =====================================================================
 def run_inference_ui(image_path):
-    """Wird aufgerufen, wenn der Nutzer auf 'Müll analysieren' klickt."""
+    # Wird aufgerufen, wenn der Nutzer auf 'Müll analysieren' klickt.
     if image_path is None:
         return None, "<p>Bitte lade ein Bild hoch.</p>", None, None
 
@@ -240,7 +240,7 @@ def run_inference_ui(image_path):
         return None, f"<p style='color:red;'>Fehler bei der Bildverarbeitung: {str(e)}</p>", None, None
 
 def verify_admin(password, current_img, current_pred):
-    """Überprüft das Passwort und schaltet die Admin-Ansicht frei."""
+    # Überprüft das Passwort und schaltet die Admin-Ansicht frei.
     if password == ADMIN_PASSWORD:
         pred_val = current_pred if current_pred else "Noch kein Bild analysiert"
         dropdown_val = current_pred if current_pred else None
@@ -264,7 +264,7 @@ def verify_admin(password, current_img, current_pred):
         )
 
 def auto_reset_admin():
-    """Wird aufgerufen, wenn auf den Admin-Tab geklickt wird. Loggt den User quasi aus."""
+    # Wird aufgerufen, wenn auf den Admin-Tab geklickt wird. Loggt den User quasi aus.
     return (
         gr.update(visible=True),   # Zeige Login
         gr.update(visible=False),  # Verstecke Dashboard
@@ -274,7 +274,7 @@ def auto_reset_admin():
     )
 
 def save_feedback(image_path, selected_class, current_prediction):
-    """Sichert ein Bild basierend auf der menschlichen Überprüfung im entsprechenden Ordner."""
+    # Sichert ein Bild basierend auf der menschlichen Überprüfung im entsprechenden Ordner.
     if not image_path:
         return """
         <div style='padding: 12px; color: #ef4444; font-family: sans-serif; font-size: 14px;'>
