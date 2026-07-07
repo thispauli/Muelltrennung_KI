@@ -1,3 +1,5 @@
+# Set 1 rotieren
+
 import os
 from PIL import Image
 

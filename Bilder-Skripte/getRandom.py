@@ -1,3 +1,5 @@
+# Zufallsauswahl der zusammengesetzten Daten
+
 import os
 import random
 import shutil
